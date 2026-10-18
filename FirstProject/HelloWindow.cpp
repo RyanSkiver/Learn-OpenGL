@@ -1,7 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream> //text
-// ON LINKING VERTEX ATTRIBUTES------------------------------------------
+// ON ELEMENT BUFFER OBJECTS
 //SOURCE CODES
 const char* vertexShaderSource = "#version 330 core\n" //source code for the vertex shader
 	"layout (location = 0) in vec3 aPos;\n"
@@ -13,7 +13,7 @@ const char* fragmentShaderSource = "#version 330 core\n" //frag shader source co
 	"out vec4 FragColor;\n"
 	"void main()\n"
 	"{\n"
-	"   GragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+	"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
 	"}\0";
 
 //function to check if pressed escape to close
@@ -45,17 +45,19 @@ int main() {
 		return -1; //stops if GLAD doesnt initialize
 	}
 	
-	//SHADERS SETUP
+	//SHADERS SETUP ---------------------------------------
 	//vertex shader setup
 	unsigned int vertexShader; //create var for Vertex shader object
 	vertexShader = glCreateShader(GL_VERTEX_SHADER); //create the actual shader
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL); //attach shader source code to the shader object (to compile to, # strings as source code, source code, NULL)
 	glCompileShader(vertexShader); //compile the shader
+	
 	//fragment shader setup (color)
 	unsigned int fragmentShader;
 	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
 	glCompileShader(fragmentShader);
+	
 	//link shaders - shader program
 	unsigned int shaderProgram; //create the program object
 	shaderProgram = glCreateProgram();
@@ -66,28 +68,39 @@ int main() {
 	glDeleteShader(fragmentShader);
 	glUseProgram(shaderProgram); //use the newly created program in every shader and rendering call from now on
 
+
 	//tell OpenGl size of rendering window
 	glViewport(0, 0, 800, 600); //(first 2: set location of lower left corner,, width, height in pixels)
 
-	//create triangle
+
+	//create triangle ------------------------------------------
 	float vertices[] = { //triangle vertices
 		-0.5f, -0.5f, 0.0f, //x, y, z (3d, z is closer/farther)
 		 0.5f, -0.5f, 0.0f,
 		 0.0f,  0.5f, 0.0f
 	};
+	unsigned int VAO; //initialize Vertex Array Object
+	glGenVertexArrays(1, &VAO); //generate array with unique id 1
 	unsigned int VBO; //initialize Vertex Buffer Object
 	glGenBuffers(1, &VBO); //generate buffer with unique id 1
+	glBindVertexArray(VAO); //bind the vertex array object
 	glBindBuffer(GL_ARRAY_BUFFER, VBO); //bind buffer to gl_array_buffer
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //make call to GL_ARRAY_BUFFER, copies vertex data into buffer memory
 			//(type of buffer to copy data into, size of the data in bytes to pass, actual data to send, how to manage the data)
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); //tell OpenGL how to interpret the vertex data (location, size, type, normalized?, stride, offset)
+	glEnableVertexAttribArray(0); //enable the vertex attribute at location 0 (the one we set in the vertex shader)
 
-	//render loop
+	//render loop ------------------------------------------
 	while (!glfwWindowShouldClose(window)){ //check if there is an instruction to close
 		//input
 		processInput(window); //check key press every frame (esc == close)
 		//render commands
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //set background color for clearing the screen (r, g, b, alpha)
 		glClear(GL_COLOR_BUFFER_BIT); //wipes color buffer, fills with what was set
+		//draw triangle
+		glUseProgram(shaderProgram); // use our shader program when we want to render an object
+		glBindVertexArray(VAO); // bind the VAO (the triangle we want to draw)
+		glDrawArrays(GL_TRIANGLES, 0, 3); // draw the triangle (mode, starting index, number of vertices to draw)
 		//check and call events, swap the buffer
 		glfwSwapBuffers(window); //swap color buffer, show as output to screen
 		glfwPollEvents(); //check if any events are triggered like mouse, keyboard
