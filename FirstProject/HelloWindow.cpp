@@ -1,7 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream> //text
-// ON ELEMENT BUFFER OBJECTS
+// ON SHADERS/GLSL
 //SOURCE CODES
 const char* vertexShaderSource = "#version 330 core\n" //source code for the vertex shader
 	"layout (location = 0) in vec3 aPos;\n"
@@ -74,19 +74,33 @@ int main() {
 
 
 	//create triangle ------------------------------------------
-	float vertices[] = { //triangle vertices
-		-0.5f, -0.5f, 0.0f, //x, y, z (3d, z is closer/farther)
-		 0.5f, -0.5f, 0.0f,
-		 0.0f,  0.5f, 0.0f
+	float vertices[] = { //triangle vertices (rectangle)
+		0.5f,  0.5f, 0.0f,  // top right
+		0.5f, -0.5f, 0.0f,  // bottom right
+		-0.5f, -0.5f, 0.0f,  // bottom left
+		-0.5f,  0.5f, 0.0f   // top left
+	};
+	unsigned int indices[] = { //indices for the rectangle (2 triangles)
+		0, 1, 3,
+		1, 2, 3
 	};
 	unsigned int VAO; //initialize Vertex Array Object
 	glGenVertexArrays(1, &VAO); //generate array with unique id 1
 	unsigned int VBO; //initialize Vertex Buffer Object
 	glGenBuffers(1, &VBO); //generate buffer with unique id 1
+	unsigned int EBO;
+	glGenBuffers(1, &EBO); //generate buffer with unique id 1
+	// ..:: Initialization code :: ..
+	// 1. bind Vertex Array Object
 	glBindVertexArray(VAO); //bind the vertex array object
+	// 2. copy our vertices array in a vertex buffer for OpenGL to use
 	glBindBuffer(GL_ARRAY_BUFFER, VBO); //bind buffer to gl_array_buffer
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //make call to GL_ARRAY_BUFFER, copies vertex data into buffer memory
 			//(type of buffer to copy data into, size of the data in bytes to pass, actual data to send, how to manage the data)
+	// 3. copy our index array in a element buffer for OpenGL to use
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); //bind the element buffer object to the GL_ELEMENT_ARRAY_BUFFER target
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); //copy the index data into the buffer memory
+	// 4. then set the vertex attributes pointers
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); //tell OpenGL how to interpret the vertex data (location, size, type, normalized?, stride, offset)
 	glEnableVertexAttribArray(0); //enable the vertex attribute at location 0 (the one we set in the vertex shader)
 
@@ -100,7 +114,8 @@ int main() {
 		//draw triangle
 		glUseProgram(shaderProgram); // use our shader program when we want to render an object
 		glBindVertexArray(VAO); // bind the VAO (the triangle we want to draw)
-		glDrawArrays(GL_TRIANGLES, 0, 3); // draw the triangle (mode, starting index, number of vertices to draw)
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //draw the triangle (mode, how many vertices, type of indices, offset)
+		glBindVertexArray(0); //unbind the VAO
 		//check and call events, swap the buffer
 		glfwSwapBuffers(window); //swap color buffer, show as output to screen
 		glfwPollEvents(); //check if any events are triggered like mouse, keyboard
